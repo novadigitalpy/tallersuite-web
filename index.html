@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TallerSuite — Gestión para talleres</title>
+<meta name="description" content="TallerSuite: clientes, vehículos, presupuestos, órdenes de trabajo, compras y Caja en una sola plataforma para talleres.">
+<meta name="theme-color" content="#167BFF">
+<link rel="stylesheet" href="style.css">
+
+<!--
+=====================================================================
+ GUÍA RÁPIDA PARA EDITAR ESTA WEB  (todo está en el bloque CONFIG de abajo)
+=====================================================================
+ Buscá el bloque  "const CONFIG = {"  (más abajo, dentro del <script>).
+ No hace falta tocar el HTML ni las funciones.
+
+ • TÍTULOS Y TEXTOS ......... CONFIG.hero, CONFIG.sections.*, CONFIG.problems,
+                              CONFIG.modules, CONFIG.assistant, CONFIG.languages…
+ • IMÁGENES ................. CONFIG.images (rutas dentro de la carpeta img/).
+                              Para cambiar una captura: reemplazá el archivo en img/
+                              (o cambiá su ruta en CONFIG.images). La foto de taller del
+                              banner es opcional: CONFIG.images.heroPhoto (vacía = no se muestra).
+ • PROFESIONES .............. CONFIG.professions  (nombre, ícono, descripción, estado:
+                              "available" = Disponible, "soon" = Próximamente,
+                              "evaluating" = En evaluación).
+ • PREGUNTAS Y RESPUESTAS ... CONFIG.quiz[<id de la profesión>].questions
+                              Cada pregunta tiene "text", "module" y 4 opciones ordenadas de
+                              menos a más organizado (valen 0, 1, 2 y 3 puntos).
+ • RESULTADOS ............... CONFIG.results (textos por nivel) y CONFIG.moduleByTag
+                              (qué módulos se recomiendan según la pregunta).
+ • ENLACES .................. CONFIG.registrationUrl (registro), CONFIG.appUrl, CONFIG.footer.links.
+ • DATOS DE CONTACTO ........ CONFIG.whatsapp.number y CONFIG.contact (si están vacíos,
+                              esos botones no aparecen).
+ • FORMULARIO DE DATOS ...... CONFIG.leadEndpoint (ver nota al lado). Vacío = no se envía nada.
+ • COLORES Y ESTILO ......... style.css, sección "1) ZONA EDITABLE" (variables :root).
+
+ PENDIENTES POR COMPLETAR (marcados como PENDIENTE en CONFIG):
+   – URL oficial de registro, número oficial de WhatsApp, correo de contacto,
+     destino seguro de los datos del formulario y fotografía de taller con licencia.
+=====================================================================
+-->
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+
+<header class="header" id="top">
+  <div class="wrap">
+    <div class="header__bar glass">
+      <a class="brand" href="#top" aria-label="TallerSuite, ir al inicio" data-brand></a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav" aria-label="Abrir menú">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <nav class="nav" id="nav" aria-label="Principal"></nav>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero" id="inicio" aria-labelledby="hero-title"></section>
+  <section class="section" id="paratitaller" aria-labelledby="audience-title"></section>
+  <section class="section section--alt" id="problemas" aria-labelledby="problemas-title"></section>
+  <section class="section" id="modulos" aria-labelledby="modulos-title"></section>
+  <section class="section section--alt" id="clientes" aria-labelledby="clientes-title"></section>
+  <section class="section" id="presupuestos" aria-labelledby="presupuestos-title"></section>
+  <section class="section section--alt" id="seguimiento" aria-labelledby="seguimiento-title"></section>
+  <section class="section" id="historial" aria-labelledby="historial-title"></section>
+  <section class="section section--alt" id="asistente" aria-labelledby="asistente-title"></section>
+  <section class="section" id="idiomas" aria-labelledby="idiomas-title"></section>
+  <section class="section" id="profesiones" aria-labelledby="profesiones-title">
+    <div class="wrap">
+      <div class="section__head center reveal" id="prof-head"></div>
+      <div class="grid grid--4" id="prof-grid"></div>
+      <div id="quiz-area" aria-live="polite"></div>
+    </div>
+  </section>
+  <section class="section" id="registro" aria-labelledby="registro-title"></section>
+</main>
+
+<footer class="footer"><div class="wrap" id="footer"></div></footer>
+
+<dialog class="lightbox" id="lightbox" aria-label="Captura ampliada">
+  <div class="lightbox__box">
+    <button class="lightbox__close" type="button" aria-label="Cerrar">✕</button>
+    <img alt="" id="lightbox-img">
+    <div class="lightbox__cap" id="lightbox-cap"></div>
+  </div>
+</dialog>
+
+<noscript><div class="wrap section"><p class="note">Esta página necesita JavaScript para mostrar su contenido y el cuestionario.</p></div></noscript>
+
+<script>
+/* =====================================================================
+   1) CONFIGURACIÓN EDITABLE  — todo el contenido de la web está acá
+   ===================================================================== */
+const CONFIG = {
+  /* ---- Marca ---- */
+  brand: { name: "TallerSuite", accent: "Suite", tagline: "Gestión para talleres" },
+
+  /* ---- Enlaces y contacto ----
+     registrationUrl: botón «Registrarme ahora».
+       Se usa la dirección pública de la app (confirmada). PENDIENTE: confirmar que es la
+       dirección oficial de registro; si hay otra, reemplazala acá (único lugar). */
+  registrationUrl: "https://tallersuite-65372.web.app/",
+  appUrl: "https://tallersuite-65372.web.app/",
+  /* WhatsApp oficial: número solo con dígitos y código de país. No se muestra en pantalla: solo se usa en el
+     enlace del botón flotante. Vacío = el botón no aparece. */
+  whatsapp: { number: "595984723961", message: "Hola, quiero conocer TallerSuite.",
+    /* Enlace del sitio web que se agrega al final del mensaje de WhatsApp. PENDIENTE: la web todavía no está
+       publicada, así que no hay dirección. Ejemplo: "https://www.tallersuite.com". Vacío = el mensaje va sin enlace. */
+    siteUrl: "" },
+  contact: { email: "" /* PENDIENTE */, phone: "" /* PENDIENTE */ },
+
+  /* Destino de los datos del formulario del resultado (nombre + WhatsApp).
+     PENDIENTE: no existe todavía una integración segura. Vacío = la web NO envía ni guarda nada
+     y se lo dice al visitante. Cuando haya un servicio (con HTTPS), poné su URL: la web enviará
+     un POST JSON {name, whatsapp, profession, level, consent}. */
+  leadEndpoint: "",
+
+  /* ---- Imágenes (capturas reales de TallerSuite con datos ficticios, dentro de img/) ---- */
+  images: {
+    heroDesktop: "img/d-inicio.webp",
+    heroPhone: "img/m-inicio.webp",
+    /* FOTOS DE PERSONAS EN TALLERES (PENDIENTE: fotos con licencia). Por ahora se muestran ilustraciones.
+       Para usar una foto real en un oficio, copiala a img/ y escribí su ruta, ej. bodyPaint: "img/chapa-pintura.webp".
+       Vacío = se usa la ilustración. Claves: bodyPaint, mechanics, motorcycle, autoElectric, metalwork, rewinding, other. */
+    photos: { bodyPaint: "img/photos/chapa-pintura.webp", mechanics: "img/photos/mecanica.webp", motorcycle: "img/photos/motos.webp", autoElectric: "" /* sin foto: usa ilustración */, metalwork: "img/photos/soldadura.webp", rewinding: "img/photos/rebobinado.webp", other: "img/photos/otros.webp" },
+    /* CRÉDITOS de las fotos (Pexels; fotos gratuitas sin marca de agua). Páginas de origen:
+       chapa-pintura: pexels.com/photo/auto-bodywork-spray-painting-in-workshop-40649187/ (recortada)
+       mecanica: pexels.com/photo/mechanic-checking-the-engine-of-a-car-6870298/
+       motos: pexels.com/photo/bearded-man-fixing-motorcycle-in-workshop-3822843/ (Andrea Piacquadio)
+       soldadura: pexels.com/photo/man-welding-in-a-workshop-15209789/ (Collab Media)
+       rebobinado: pexels.com/photo/electrician-working-with-multimeter-in-workshop-33531830/ (recortada)
+       otros: pexels.com/photo/happy-elderly-worker-smiling-in-workshop-3846033/ (Andrea Piacquadio)
+       PENDIENTE: confirmar la licencia en pexels.com/license (no pude abrirla desde mi equipo). */
+    shots: {
+      dashboard: "img/d-inicio.webp", clients: "img/d-clientes.webp", vehicles: "img/d-vehiculos.webp",
+      budgets: "img/d-presupuestos.webp", orders: "img/d-ordenes.webp", cash: "img/d-caja.webp",
+      purchases: "img/d-compras.webp", inventory: "img/d-repuestos.webp", specialties: "img/d-nuevo.webp",
+      assistant: "img/d-asistente.webp", formClient: "img/d-form-cliente.webp", formVehicle: "img/d-form-vehiculo.webp",
+      pdf: "img/pdf-bodypaint-es.webp", pdfPt: "img/pdf-mechanics-pt.webp", pdfMoto: "img/pdf-motorcycle-es.webp",
+      mobileOrders: "img/m-ordenes.webp"
+    }
+  },
+
+  /* ---- Menú superior ---- */
+  nav: [
+    { label: "Funciones", href: "#modulos" }, { label: "Presupuestos", href: "#presupuestos" },
+    { label: "Seguimiento", href: "#seguimiento" }, { label: "Asistente", href: "#asistente" },
+    { label: "Profesiones", href: "#profesiones" }
+  ],
+  buttons: { register: "Registrarme ahora", learn: "Conocer TallerSuite", explore: "Explorar profesiones", whatsapp: "Escribir por WhatsApp" },
+
+  /* ---- Banner principal ---- */
+  hero: {
+    title: "Tu taller merece una gestión <em>más inteligente.</em>",
+    subtitle: "Gestioná clientes, trabajos, presupuestos, compras, pagos y seguimiento desde una sola plataforma.",
+    note: "Cada taller nuevo empieza con 30 días de prueba.",
+    chips: ["Clientes y vehículos", "Presupuestos en PDF", "Órdenes de trabajo", "Caja y pagos", "Compras y stock"],
+    demoNote: "Capturas reales de TallerSuite con datos ficticios."
+  },
+
+  /* ---- Público: "Hecho para talleres como el tuyo" (kind = clave de oficio; abre su cuestionario) ---- */
+  audience: {
+    eyebrow: "Hecho para el taller de verdad", title: "Si trabajás con las manos, esto es para vos",
+    lead: "Sabemos cómo es el día a día: el cliente espera, el trabajo no para y la información queda en mil lugares. Elegí tu oficio y mirá cómo está tu organización.",
+    cta: "Hacer el cuestionario",
+    tiles: [
+      { kind: "bodyPaint", title: "Chapa y pintura", text: "Tres vehículos en el taller y los precios dando vueltas en tu cabeza." },
+      { kind: "mechanics", title: "Mecánica automotriz", text: "Un diagnóstico, un cambio de aceite y un cliente esperando el presupuesto." },
+      { kind: "motorcycle", title: "Mecánica de motos", text: "La moto entró el lunes y el cliente llama el jueves: ¿en qué estado está?" },
+      { kind: "metalwork", title: "Metalúrgica y soldadura", text: "Cortes, soldaduras y materiales calculados sobre la marcha." }
+    ]
+  },
+
+  /* ---- Problemas que resuelve ---- */
+  problems: {
+    eyebrow: "Lo que pasa en muchos talleres", title: "Cuando todo vive en papeles, chats y la memoria",
+    lead: "El trabajo sale, pero la información se dispersa. TallerSuite junta lo importante en un solo lugar.",
+    items: [
+      { icon: "📄", title: "Presupuestos desorganizados", text: "Cada presupuesto con su formato, perdido entre mensajes y cuadernos. Cuesta saber cuál se aprobó y cuál quedó pendiente." },
+      { icon: "👥", title: "Datos de clientes dispersos", text: "Teléfonos en el celular, vehículos en un cuaderno, trabajos anteriores en la memoria de alguien." },
+      { icon: "🔧", title: "Trabajos difíciles de controlar", text: "Con varios vehículos en el taller, ¿cuál está abierto, cuál en proceso y cuál listo para entregar?" },
+      { icon: "🛒", title: "Compras y materiales sin seguimiento", text: "Se compra sobre la marcha y después nadie recuerda cuánto se gastó ni qué queda en stock." },
+      { icon: "💰", title: "Pagos y saldos poco claros", text: "Adelantos anotados a mano y transferencias que hay que buscar para saber cuánto falta cobrar." },
+      { icon: "🗂", title: "Historiales incompletos", text: "Cuando vuelve un cliente, reconstruir qué se le hizo al vehículo lleva tiempo." }
+    ]
+  },
+
+  /* ---- Módulos (galería de capturas reales). status: available | soon | evaluating ---- */
+  modulesSection: {
+    eyebrow: "Funciones", title: "Conocé lo que podés hacer con TallerSuite",
+    lead: "Bajá y mirá cómo cambia la pantalla: son capturas reales con datos de demostración.",
+    /* Orden de los pasos de la presentación con scroll (ids de CONFIG.modules) y los que van aparte */
+    scrollIds: ["dashboard", "clients", "vehicles", "budgets", "orders", "cash", "purchases", "assistant"],
+    extraIds: ["inventory", "specialties", "tracking"]
+  },
+  statusLabels: { available: "Disponible", soon: "Próximamente", evaluating: "En evaluación" },
+  modules: [
+    { id: "dashboard", icon: "🏠", title: "Panel de inicio", status: "available", shot: "dashboard", text: "Un resumen de clientes, vehículos, presupuestos, órdenes y el saldo de Caja, con accesos rápidos para empezar a trabajar." },
+    { id: "clients", icon: "👥", title: "Clientes", status: "available", shot: "clients", text: "Fichas de clientes con teléfono y WhatsApp, para tenerlos siempre a mano." },
+    { id: "vehicles", icon: "🚗", title: "Vehículos", status: "available", shot: "vehicles", text: "Cada vehículo ligado a su dueño, con marca, modelo, año, chapa, VIN y kilometraje. En motos, también la cilindrada." },
+    { id: "budgets", icon: "📋", title: "Presupuestos", status: "available", shot: "budgets", text: "Armá el presupuesto, registrá adelantos y pagos, generá el PDF, enviá por WhatsApp, compartí un enlace de solo lectura o convertilo en orden de trabajo." },
+    { id: "orders", icon: "🛠", title: "Órdenes de trabajo", status: "available", shot: "orders", text: "Estado de cada orden (abierta, en proceso, entregada), avance de los trabajos, pagos y saldo pendiente." },
+    { id: "cash", icon: "💰", title: "Caja", status: "available", shot: "cash", text: "Ingresos, gastos y saldo del taller, con gráficos de los últimos días." },
+    { id: "purchases", icon: "🛒", title: "Compras y proveedores", status: "available", shot: "purchases", badgeNote: "Plan Pro", text: "Registrá compras a proveedores: el stock aumenta y, si se pagan, se anotan en Caja. Incluido en los planes Pro y durante la prueba." },
+    { id: "inventory", icon: "📦", title: "Repuestos y materiales", status: "available", shot: "inventory", text: "Inventario del taller con stock y stock mínimo. Los repuestos del cliente se distinguen y no tocan el stock." },
+    { id: "specialties", icon: "🧰", title: "Servicios por especialidad", status: "available", shot: "specialties", text: "Chapa y pintura, mecánica automotriz y mecánica de motos, cada una con su propio asistente de servicio." },
+    { id: "assistant", icon: "🤖", title: "Asistente T.S.", status: "available", badgeNote: "Guía local · IA próximamente", shot: "assistant", text: "Hoy orienta sobre cómo usar TallerSuite. La versión con inteligencia artificial todavía no está activa." },
+    { id: "tracking", icon: "📲", title: "Seguimiento para el cliente", status: "soon", shot: "", text: "Que el cliente consulte el avance de su trabajo desde el celular. Todavía no está disponible." }
+  ],
+
+  /* ---- Clientes y vehículos ---- */
+  clientsVehicles: {
+    eyebrow: "Clientes y vehículos", title: "Cada cliente con sus vehículos, desde el primer día",
+    lead: "Cargás el cliente una vez y le vas sumando sus vehículos. Los datos quedan listos para presupuestos y órdenes.",
+    fields: ["Cliente (dueño del vehículo)", "Marca y modelo", "Año y tipo de vehículo", "Color", "Chapa / matrícula", "VIN o chasis", "Kilometraje", "Cilindrada (para motos)"],
+    photosNote: "Las fotos se adjuntan al presupuesto (fotos del vehículo y del daño) y pueden salir en el informe de servicio."
+  },
+
+  /* ---- Presupuestos profesionales ---- */
+  budgetsSection: {
+    eyebrow: "Presupuestos profesionales", title: "Del presupuesto al PDF, listo para compartir",
+    lead: "Un presupuesto claro, con el formato de tu taller, que podés descargar o enviar en minutos.",
+    steps: [
+      { title: "Elaborá el presupuesto", tab: "Elaborá", shot: "specialties", text: "Elegí el cliente y el vehículo, sumá los trabajos con su precio y los repuestos. TallerSuite calcula el total." },
+      { title: "Descargalo en PDF", tab: "PDF", shot: "pdf", fit: "contain", text: "Un documento con datos del taller, del cliente y del vehículo, trabajos, total y tiempo estimado de entrega." },
+      { title: "Enviá por WhatsApp", tab: "WhatsApp", shot: "budgets", text: "Se prepara un mensaje con el resumen del presupuesto para que lo revises y lo envíes vos." },
+      { title: "Compartí un enlace", tab: "Enlace", shot: "budgets", text: "Un enlace de solo lectura con vencimiento, que podés revocar cuando quieras." }
+    ],
+    note: "El PDF y el enlace son presupuestos. No son facturas fiscales."
+  },
+
+  /* ---- Seguimiento del trabajo (NO disponible todavía: se muestra como «Próximamente») ---- */
+  tracking: {
+    eyebrow: "Seguimiento del trabajo", title: "Que tu cliente sepa cómo va su vehículo",
+    status: "soon",
+    lead: "Estamos pensando en que el cliente pueda consultar el avance desde su celular, sin tener que visitar el taller.",
+    todayTitle: "Lo que ya podés hacer hoy",
+    today: [
+      "Llevar el estado de cada orden: abierta, en proceso o entregada.",
+      "Ver el avance de los trabajos de cada orden.",
+      "Compartir con el cliente el presupuesto con un enlace de solo lectura, o por WhatsApp.",
+      "Adjuntar fotos al presupuesto y generar el informe de servicio en PDF cuando se entrega."
+    ],
+    soonTitle: "Lo que viene",
+    soon: ["Enlace de seguimiento para el cliente.", "Fotos del proceso y etapas del trabajo visibles desde el celular."],
+    note: "El seguimiento para el cliente todavía no existe en TallerSuite: no hay enlace de seguimiento ni actualizaciones automáticas. Lo mostramos como próxima función, sin fecha confirmada."
+  },
+
+  /* ---- Historial y documentos finales ---- */
+  history: {
+    eyebrow: "Historial y documentos", title: "Todo lo que se hizo, ordenado y a mano",
+    lead: "Consultá trabajos, repuestos, pagos y saldos de cada orden, y descargá los documentos cuando los necesites.",
+    items: [
+      "Órdenes de trabajo con sus trabajos, repuestos y materiales.",
+      "Pagos registrados y saldo pendiente de cada presupuesto y orden.",
+      "Caja con ingresos y gastos, y compras a proveedores.",
+      "Fichas de clientes y vehículos para consultar su información.",
+      "Presupuesto en PDF y, para órdenes entregadas, informe de servicio en PDF."
+    ],
+    note: "Los documentos de TallerSuite son presupuestos e informes de servicio. No son facturas fiscales."
+  },
+
+  /* ---- Asistente T.S. ---- */
+  assistant: {
+    eyebrow: "Asistente T.S.", title: "Un asistente dentro de tu panel",
+    lead: "Un botón flotante, siempre a mano, para preguntar cómo hacer algo en TallerSuite.",
+    todayTitle: "Disponible hoy",
+    today: ["Responde dudas sobre cómo usar las funciones de TallerSuite (guía local).", "No consulta los registros de tu taller.", "No hace cambios ni ejecuta tareas por vos."],
+    soonTitle: "Próximamente (todavía no activo)",
+    soon: [
+      "Responder con un resumen de tu taller: Caja del mes, órdenes activas y stock bajo.",
+      "Sugerir un borrador de presupuesto a partir de fotos de un daño.",
+      "Leer una factura de compra y ayudarte a cargarla.",
+      "Redactar mensajes de WhatsApp para tus clientes."
+    ],
+    plansNote: "Cuando se active, la guía con IA estará en todos los planes, y las funciones que consultan datos del taller en el plan Pro y durante la prueba. Siempre con límites de uso.",
+    note: "La versión con inteligencia artificial está desarrollada pero todavía no está activa. Hoy el asistente funciona como guía."
+  },
+
+  /* ---- Idiomas y monedas ---- */
+  languages: {
+    eyebrow: "Idiomas y monedas", title: "Documentos en español o portugués, en guaraníes o reales",
+    lead: "Elegís el idioma del presupuesto antes de descargarlo o enviarlo. Útil para clientes de Brasil.",
+    items: [
+      "PDF y mensaje de WhatsApp en español o en portugués.",
+      "Montos en guaraníes (Gs.).",
+      "En portugués, montos convertidos a reales (R$) con el tipo de cambio que escribís vos.",
+      "El presupuesto guardado sigue en guaraníes: la conversión es solo para mostrar."
+    ],
+    note: "El idioma cambia solo los documentos para el cliente. La aplicación en sí está en español."
+  },
+
+  /* ---- Selector de profesiones ---- */
+  professionsSection: {
+    eyebrow: "Tu oficio", title: "Elegí tu profesión y descubrí cómo está tu organización",
+    lead: "Un cuestionario corto de cinco preguntas. No guardamos tus respuestas.",
+    disclaimer: "Los estados indican qué especialidades ya funcionan en TallerSuite hoy."
+  },
+  professions: [
+    { id: "bodyPaint", icon: "🎨", name: "Chapa y pintura", status: "available", text: "Piezas, lados y tipos de trabajo, con catálogo propio y fotos del daño." },
+    { id: "mechanics", icon: "🔧", name: "Mecánica automotriz", status: "available", text: "Diagnóstico, mantenimiento y reparación, con servicios sugeridos para editar." },
+    { id: "motorcycle", icon: "🏍", name: "Mecánica de motos", status: "available", text: "Servicios para motocicletas, con cilindrada y documentos adaptados." },
+    { id: "autoElectric", icon: "⚡", name: "Electricidad automotriz", status: "soon", text: "Diagnóstico y reparación eléctrica del vehículo." },
+    { id: "metalwork", icon: "🏭", name: "Metalúrgica y soldadura", status: "soon", text: "Trabajos a medida, cálculo de materiales y seguimiento de obras." },
+    { id: "rewinding", icon: "🌀", name: "Rebobinado de motores", status: "soon", text: "Motores y equipos, con su ficha técnica y reparaciones." },
+    { id: "other", icon: "🧰", name: "Otros oficios", status: "evaluating", text: "Estamos evaluando nuevas especialidades." }
+  ],
+
+  /* ---- Cuestionario ---- */
+  quizUi: {
+    startTitle: "Cuestionario", questionOf: "Pregunta {n} de {total}", prev: "Anterior", next: "Siguiente",
+    finish: "Ver mi resultado", restart: "Volver a empezar", choose: "Elegí una opción para continuar.",
+    changeProfession: "Cambiar de profesión"
+  },
+  /* Etiquetas de cada respuesta en el resultado */
+  scoreTags: ["Para ordenar", "En camino", "Bien encaminado", "Organizado"],
+  /* Qué módulos de TallerSuite se recomiendan según el tema (module) de cada pregunta */
+  moduleByTag: {
+    budgets: { label: "Presupuestos", modules: ["budgets"] },
+    materials: { label: "Materiales y compras", modules: ["purchases", "inventory"] },
+    orders: { label: "Seguimiento de trabajos", modules: ["orders"] },
+    cash: { label: "Pagos y saldos", modules: ["cash", "budgets"] },
+    history: { label: "Historial", modules: ["orders", "vehicles"] }
+  },
+  results: {
+    levels: [
+      { max: 1.2, title: "Tu taller puede trabajar con más organización.", text: "Hoy buena parte de la información depende de papeles, chats o la memoria. Centralizá clientes, presupuestos, trabajos, compras, pagos e historial con las herramientas disponibles de TallerSuite." },
+      { max: 2.2, title: "Ya tenés una base, y hay lugar para ordenar más.", text: "Algunas áreas están encaminadas y otras todavía se resuelven a mano. TallerSuite puede ayudarte a unirlas en un mismo lugar." },
+      { max: 4, title: "Tu taller ya trabaja con orden.", text: "Tenés buenos hábitos. TallerSuite puede ayudarte a concentrar todo en una sola plataforma y a ahorrar pasos repetidos." }
+    ],
+    disclaimer: "Es un diagnóstico orientativo basado en tus respuestas. No promete resultados económicos ni mejoras garantizadas.",
+    opportunitiesTitle: "Oportunidades que vemos", noOpportunities: "No vemos áreas débiles en tus respuestas. Igual podés conocer cómo TallerSuite junta todo en un solo lugar.",
+    modulesTitle: "Funciones de TallerSuite relacionadas",
+    answersTitle: "Tus respuestas",
+    availability: {
+      available: "TallerSuite ya está disponible para tu especialidad.",
+      soon: "Tu especialidad está marcada como «Próximamente». Hoy podés usar las funciones generales de TallerSuite (clientes, presupuestos, órdenes, Caja, compras), pero todavía no tiene asistentes específicos para tu oficio.",
+      evaluating: "Tu oficio está «En evaluación». Hoy podés usar las funciones generales de TallerSuite, pero todavía no tiene asistentes específicos para tu oficio."
+    }
+  },
+
+  /* ---- Datos opcionales tras el resultado ---- */
+  lead: {
+    title: "¿Querés que te contactemos? (opcional)",
+    text: "Podés dejar tu nombre y tu WhatsApp para que te escribamos sobre TallerSuite. No es obligatorio para ver tu resultado.",
+    use: "Usaríamos estos datos solo para contactarte por TallerSuite. No se envían si no marcás tu consentimiento.",
+    consent: "Acepto que me contacten por WhatsApp sobre TallerSuite con estos datos.",
+    submit: "Enviar mis datos",
+    needConsent: "Para enviar tus datos tenés que marcar el consentimiento.",
+    needData: "Completá al menos tu WhatsApp o dejá este paso en blanco: no es obligatorio.",
+    notConnected: "El envío de datos todavía no está activado en esta versión de la web: no se guardó ni se envió nada. Podés registrarte directamente con el botón de abajo.",
+    sent: "¡Gracias! Recibimos tus datos.",
+    failed: "No pudimos enviar tus datos en este momento. No se guardó nada; probá más tarde."
+  },
+
+  /* ---- Cierre y pie ---- */
+  registro: {
+    title: "Empezá a ordenar tu taller", lead: "Creá tu cuenta y probá TallerSuite durante 30 días.",
+    note: "Sin promesas de resultados: es una herramienta para que tu información esté en un solo lugar."
+  },
+  footer: {
+    text: "TallerSuite · Gestión para talleres.",
+    legal: "Las capturas son de la aplicación real con datos ficticios. Los documentos de TallerSuite son presupuestos e informes de servicio, no facturas fiscales.",
+    links: [{ label: "Ingresar a la app", href: "https://tallersuite-65372.web.app/" }, { label: "Funciones", href: "#modulos" }, { label: "Profesiones", href: "#profesiones" }]
+  }
+};
+
+/* ---- Preguntas del cuestionario, por profesión ----
+   Q(tema, texto, [opción 0, opción 1, opción 2, opción 3]). La opción 0 es la menos organizada. */
+const Q = (module, text, options) => ({ module, text, options });
+CONFIG.quiz = {
+  bodyPaint: { questions: [
+    Q("budgets", "¿Cómo preparás hoy los presupuestos de reparación y pintura?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Calculo por cliente, por WhatsApp o de memoria.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás la pintura, masillas, lijas y demás materiales?", ["Compro cuando se acaba, sin registro.", "Llevo una lista o planilla.", "Calculo sobre la marcha según cada trabajo.", "Tengo materiales y cantidades organizados."]),
+    Q("orders", "Con varios vehículos en el taller, ¿cómo seguís el avance de cada uno?", ["Lo recuerdo o lo anoto en un cuaderno.", "Actualizo una planilla.", "Pregunto al personal o reviso mensajes.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo registrás adelantos, pagos y saldos pendientes?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "Cuando entregás un vehículo, ¿cómo guardás lo que se le hizo?", ["Guardo notas o papeles sueltos.", "Lo registro en planillas.", "Busco fotos y chats anteriores.", "Tengo un historial digital organizado."])
+  ] },
+  mechanics: { questions: [
+    Q("budgets", "¿Cómo armás los presupuestos de mantenimiento y reparación?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Según cada cliente, por WhatsApp o de memoria.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás los repuestos y los insumos que usás?", ["Compro cuando hace falta, sin registro.", "Tengo una lista o planilla.", "Consulto a proveedores sobre la marcha.", "Tengo stock y compras organizados."]),
+    Q("orders", "Cuando hay varios autos en el taller, ¿cómo controlás cada trabajo?", ["Lo recuerdo o lo anoto en un cuaderno.", "Actualizo una planilla.", "Pregunto al personal o reviso mensajes.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo llevás los pagos, adelantos y saldos de tus clientes?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "¿Cómo guardás el historial de servicios de cada vehículo?", ["Con fichas o papeles sueltos.", "En planillas.", "Busco entre chats y fotos anteriores.", "Tengo un historial digital organizado."])
+  ] },
+  motorcycle: { questions: [
+    Q("budgets", "¿Cómo presupuestás los servicios de las motos?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "De palabra o por WhatsApp, según el cliente.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás repuestos, aceites y demás insumos?", ["Compro cuando se acaban, sin registro.", "Llevo una lista o planilla.", "Compro sobre la marcha según el trabajo.", "Tengo stock y compras organizados."]),
+    Q("orders", "Con varias motos en el taller, ¿cómo seguís cada trabajo?", ["Lo recuerdo o lo anoto en un cuaderno.", "Actualizo una planilla.", "Pregunto al personal o reviso mensajes.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo registrás pagos, adelantos y saldos?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "¿Cómo guardás qué servicios tuvo cada moto?", ["Notas o papeles sueltos.", "Planillas.", "Busco entre chats y fotos anteriores.", "Historial digital organizado."])
+  ] },
+  autoElectric: { questions: [
+    Q("budgets", "¿Cómo presupuestás las reparaciones eléctricas?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Según cada cliente, de memoria o por WhatsApp.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás cables, fusibles, relés y demás repuestos?", ["Compro cuando hace falta, sin registro.", "Tengo una lista o planilla.", "Consulto a proveedores sobre la marcha.", "Tengo stock y compras organizados."]),
+    Q("orders", "Cuando tenés varios diagnósticos abiertos, ¿cómo seguís cada uno?", ["Lo recuerdo o lo anoto en un cuaderno.", "Actualizo una planilla.", "Pregunto al personal o reviso mensajes.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo llevás los pagos, adelantos y saldos?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "¿Cómo guardás lo que se diagnosticó y reparó en cada vehículo?", ["Notas o papeles sueltos.", "Planillas.", "Busco entre chats y fotos anteriores.", "Historial digital organizado."])
+  ] },
+  metalwork: { questions: [
+    Q("budgets", "¿Cómo preparás hoy los presupuestos de tus trabajos?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Calculando según cada cliente, por WhatsApp o de memoria.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo calculás los materiales que necesitás?", ["Hago los cálculos manualmente.", "Uso una planilla o lista.", "Calculo sobre la marcha y compro cuando hace falta.", "Tengo materiales y cantidades organizados."]),
+    Q("orders", "Cuando tenés varios trabajos, ¿cómo controlás su avance?", ["Recuerdo cada trabajo o anoto en un cuaderno.", "Actualizo una planilla.", "Consulto mensajes y pregunto al personal.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo registrás los anticipos, pagos y saldos pendientes?", ["Anoto los pagos manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Llevo los pagos y saldos en un sistema."]),
+    Q("history", "Cuando terminás un trabajo, ¿cómo guardás su historial?", ["Guardo notas o documentos sueltos.", "Registro los datos en planillas.", "Busco fotos y conversaciones anteriores.", "Tengo un historial digital organizado."])
+  ] },
+  rewinding: { questions: [
+    Q("budgets", "¿Cómo presupuestás el rebobinado o la reparación de un motor?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Según cada cliente, de memoria o por WhatsApp.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás el alambre, aislantes y demás materiales?", ["Compro cuando se acaban, sin registro.", "Llevo una lista o planilla.", "Calculo sobre la marcha según cada motor.", "Tengo materiales y cantidades organizados."]),
+    Q("orders", "Con varios motores en el taller, ¿cómo controlás cada uno?", ["Lo recuerdo o lo anoto en un cuaderno.", "Actualizo una planilla.", "Pregunto al personal o reviso mensajes.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo registrás anticipos, pagos y saldos?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "¿Cómo guardás los datos técnicos y el historial de cada motor?", ["Notas o papeles sueltos.", "Planillas.", "Busco entre fotos y chats anteriores.", "Historial digital organizado."])
+  ] },
+  other: { questions: [
+    Q("budgets", "¿Cómo preparás los presupuestos de tu oficio?", ["A mano, con papel y calculadora.", "Con Excel o planillas.", "Según cada cliente, por WhatsApp o de memoria.", "Con un sistema organizado."]),
+    Q("materials", "¿Cómo controlás los materiales y repuestos que usás?", ["Compro cuando hace falta, sin registro.", "Llevo una lista o planilla.", "Calculo sobre la marcha.", "Tengo materiales y stock organizados."]),
+    Q("orders", "Con varios trabajos a la vez, ¿cómo controlás su avance?", ["Los recuerdo o anoto en un cuaderno.", "Actualizo una planilla.", "Consulto mensajes y pregunto al personal.", "Tengo un seguimiento organizado."]),
+    Q("cash", "¿Cómo registrás anticipos, pagos y saldos pendientes?", ["Los anoto manualmente.", "Uso una planilla de cuentas.", "Reviso transferencias y conversaciones.", "Los llevo en un sistema."]),
+    Q("history", "Cuando terminás un trabajo, ¿cómo guardás su historial?", ["Notas o documentos sueltos.", "Planillas.", "Busco fotos y conversaciones anteriores.", "Historial digital organizado."])
+  ] }
+};
+
+/* =====================================================================
+   2) FUNCIONES  (no hace falta editarlas para cambiar contenido)
+   ===================================================================== */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const shot = (key) => CONFIG.images.shots[key] || "";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function waLink() {
+  const n = String(CONFIG.whatsapp.number || "").replace(/\D/g, "");
+  const text = [CONFIG.whatsapp.message, CONFIG.whatsapp.siteUrl].filter(Boolean).join("\n");
+  return n ? `https://wa.me/${n}?text=${encodeURIComponent(text)}` : "";
+}
+const registerBtn = (cls = "btn btn--primary", label = CONFIG.buttons.register) =>
+  `<a class="${cls}" href="${esc(CONFIG.registrationUrl)}" target="_blank" rel="noopener">${esc(label)}</a>`;
+const whatsappBtn = () => ""; /* el acceso a WhatsApp es el ícono flotante (renderWhatsappFloat) */
+const badge = (status, label) => `<span class="badge badge--${status === "available" ? "ok" : status === "soon" ? "soon" : "eval"}">${esc(label || CONFIG.statusLabels[status])}</span>`;
+const zoomBtn = (src, alt, extra = "") => `<button class="mod__shot ${extra}" type="button" data-zoom="${esc(src)}" data-cap="${esc(alt)}" aria-label="Ampliar captura: ${esc(alt)}"><img src="${esc(src)}" alt="${esc(alt)}" loading="lazy" decoding="async"></button>`;
+const head = (o, center = false) => `<div class="section__head ${center ? "center" : ""} reveal"><span class="eyebrow">${esc(o.eyebrow)}</span><h2 id="__ID__">${o.title}</h2>${o.lead ? `<p class="lead">${esc(o.lead)}</p>` : ""}</div>`;
+const headId = (html, id) => html.replace("__ID__", id);
+const ticks = (arr) => `<ul class="ticks">${arr.map((t) => `<li><span>${esc(t)}</span></li>`).join("")}</ul>`;
+
+/* ---- Cabecera ---- */
+function renderHeader() {
+  $("[data-brand]").innerHTML = `${esc(CONFIG.brand.name.replace(CONFIG.brand.accent, ""))}<b>${esc(CONFIG.brand.accent)}</b>`;
+  $("#nav").innerHTML = CONFIG.nav.map((n) => `<a href="${esc(n.href)}">${esc(n.label)}</a>`).join("") + registerBtn("btn btn--primary btn--sm");
+  const t = $(".nav-toggle"), nav = $("#nav");
+  t.addEventListener("click", () => { const o = nav.classList.toggle("open"); t.setAttribute("aria-expanded", o); });
+  nav.addEventListener("click", (e) => { if (e.target.closest("a")) { nav.classList.remove("open"); t.setAttribute("aria-expanded", "false"); } });
+}
+
+/* ---- Ilustraciones de oficios (se reemplazan por fotos si CONFIG.images.photos las trae) ---- */
+let sceneN = 0;
+const SKINS = ["#F2C6A0", "#C98F63", "#8D5A3B"];
+const carShape = (c) => `<rect x="20" y="168" width="190" height="46" rx="14" fill="${c}"/><path d="M62 168l22-34h72l28 34z" fill="${c}"/><path d="M74 166l15-26h30v26zM126 166v-26h28l18 26z" fill="#EAF6FF"/><circle cx="65" cy="216" r="21" fill="#10233F"/><circle cx="65" cy="216" r="9" fill="#C9D4E3"/><circle cx="165" cy="216" r="21" fill="#10233F"/><circle cx="165" cy="216" r="9" fill="#C9D4E3"/>`;
+const wrench = (x, y, a) => `<g transform="rotate(${a} ${x} ${y})"><rect x="${x - 6}" y="${y - 4}" width="70" height="8" rx="4" fill="#C9D4E3"/><circle cx="${x - 6}" cy="${y}" r="10" fill="none" stroke="#C9D4E3" stroke-width="6"/></g>`;
+const SCENES = {
+  bodyPaint: { bg: ["#DDEBFF", "#BFE3FF"], hand: [200, 150], prop: () => carShape("#E5484D") + `<circle cx="176" cy="150" r="9" fill="#27C7F5" opacity=".9"/><circle cx="154" cy="150" r="14" fill="#27C7F5" opacity=".6"/><circle cx="128" cy="152" r="19" fill="#27C7F5" opacity=".4"/><rect x="190" y="143" width="26" height="12" rx="4" fill="#10233F"/>` },
+  mechanics: { bg: ["#E3F0FF", "#CFE6FF"], hand: [196, 168], prop: () => carShape("#167BFF") + `<path d="M20 172L64 124l24 12-42 40z" fill="#9FB6D3"/>` + wrench(172, 166, -30) },
+  motorcycle: { bg: ["#E6F4FF", "#C9EAFF"], hand: [200, 160], prop: () => `<circle cx="55" cy="212" r="26" fill="none" stroke="#10233F" stroke-width="9"/><circle cx="165" cy="212" r="26" fill="none" stroke="#10233F" stroke-width="9"/><path d="M55 212L90 160h50l25 52M90 160l-12-24h-22M118 160v-28h26" stroke="#167BFF" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><rect x="86" y="148" width="48" height="11" rx="5" fill="#10233F"/><circle cx="114" cy="190" r="14" fill="#52657F"/>` },
+  autoElectric: { bg: ["#FFF6DD", "#D8EEFF"], hand: [196, 150], prop: () => carShape("#27C7F5") + `<polygon points="118,100 88,166 114,166 102,216 152,144 124,144 142,100" fill="#FFC53D" stroke="#10233F" stroke-width="3" stroke-linejoin="round"/>` },
+  metalwork: { bg: ["#E8EEF6", "#D3E3F7"], hand: [196, 186], mask: true, prop: () => `<rect x="20" y="206" width="190" height="14" rx="3" fill="#52657F"/><rect x="40" y="150" width="14" height="60" fill="#7B8CA3"/><rect x="150" y="150" width="14" height="60" fill="#7B8CA3"/><rect x="30" y="142" width="144" height="12" rx="3" fill="#52657F"/><g stroke="#FFC53D" stroke-width="4" stroke-linecap="round"><path d="M156 178l-14-16M164 182l2-22M170 188l18-10M150 188l-18-6"/></g><circle cx="160" cy="186" r="7" fill="#FFE08A"/>` },
+  rewinding: { bg: ["#FFF1E2", "#D6E8FA"], hand: [186, 178], prop: () => `<rect x="36" y="150" width="136" height="64" rx="16" fill="#52657F"/><path d="M62 150v64M86 150v64M110 150v64M134 150v64" stroke="#3B4A60" stroke-width="5"/><rect x="172" y="166" width="16" height="32" fill="#10233F"/><ellipse cx="56" cy="182" rx="20" ry="34" fill="none" stroke="#D98A3D" stroke-width="7"/><ellipse cx="46" cy="182" rx="20" ry="34" fill="none" stroke="#E8A860" stroke-width="5"/>` },
+  other: { bg: ["#E9F1FF", "#D2E6FF"], hand: [190, 190], prop: () => `<rect x="38" y="172" width="124" height="44" rx="9" fill="#E5484D"/><rect x="84" y="160" width="32" height="14" rx="5" fill="none" stroke="#10233F" stroke-width="6"/><circle cx="110" cy="116" r="24" fill="none" stroke="#167BFF" stroke-width="13" stroke-dasharray="8 6"/><circle cx="110" cy="116" r="10" fill="#fff"/>` }
+};
+function scene(kind, tone = 0) {
+  const s = SCENES[kind] || SCENES.other, id = `sc${++sceneN}`, skin = SKINS[tone % 3], [hx, hy] = s.hand;
+  return `<svg class="scene" viewBox="0 0 400 300" role="img" aria-label="Ilustración de una persona trabajando" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${s.bg[0]}"/><stop offset="1" stop-color="${s.bg[1]}"/></linearGradient></defs>
+    <rect width="400" height="300" fill="url(#${id})"/><circle cx="330" cy="50" r="70" fill="#fff" opacity=".35"/><circle cx="60" cy="40" r="40" fill="#fff" opacity=".3"/>
+    <rect y="258" width="400" height="42" fill="#10233F" opacity=".09"/>
+    ${s.prop()}
+    <rect x="228" y="196" width="22" height="64" rx="8" fill="#10233F"/><rect x="254" y="196" width="22" height="64" rx="8" fill="#10233F"/>
+    <rect x="222" y="112" width="60" height="96" rx="20" fill="#167BFF"/><rect x="236" y="150" width="32" height="26" rx="6" fill="#0F5FCC"/>
+    <path d="M276 134l10 52" stroke="#167BFF" stroke-width="16" stroke-linecap="round"/><circle cx="287" cy="190" r="9" fill="${skin}"/>
+    <path d="M230 134L${hx} ${hy}" stroke="#167BFF" stroke-width="16" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="9" fill="${skin}"/>
+    <circle cx="252" cy="92" r="24" fill="${skin}"/>
+    ${s.mask ? `<rect x="228" y="70" width="48" height="42" rx="14" fill="#10233F"/><rect x="235" y="85" width="34" height="11" rx="4" fill="#27C7F5"/>` : `<path d="M228 88a24 24 0 0 1 48 0z" fill="#10233F"/><rect x="222" y="86" width="22" height="7" rx="3.5" fill="#10233F"/><circle cx="244" cy="98" r="2.6" fill="#10233F"/><circle cx="262" cy="98" r="2.6" fill="#10233F"/><path d="M243 106q9 7 18 0" stroke="#10233F" stroke-width="2.6" fill="none" stroke-linecap="round"/>`}
+  </svg>`;
+}
+/* Foto real si está configurada; si no, la ilustración */
+const visual = (kind, tone = 0, alt = "") => {
+  const p = CONFIG.images.photos[kind];
+  return p ? `<img class="scene-photo" src="${esc(p)}" alt="${esc(alt)}" loading="lazy" decoding="async">` : scene(kind, tone);
+};
+
+/* ---- Banner (estilo A: pila 3D que sigue al mouse) ---- */
+function renderHero() {
+  const h = CONFIG.hero, sh = CONFIG.images.shots;
+  $("#inicio").innerHTML = `<div class="wrap hero__grid">
+    <div class="hero__copy">
+      <span class="eyebrow">${esc(CONFIG.brand.tagline)}</span>
+      <h1 id="hero-title">${h.title}</h1>
+      <p class="lead">${esc(h.subtitle)}</p>
+      <div class="hero__cta">${registerBtn("btn btn--primary", CONFIG.buttons.register)}<a class="btn btn--ghost" href="#modulos">${esc(CONFIG.buttons.learn)}</a>${whatsappBtn()}</div>
+      <p class="hero__note">${esc(h.note)}</p>
+      <div class="hero__chips">${h.chips.map((c) => `<span class="chip">${esc(c)}</span>`).join("")}</div>
+    </div>
+    <div class="hero__visual stack3d" id="stack">
+      <div class="orb o1"></div><div class="orb o2"></div>
+      <div class="stage" id="stage">
+        <div class="it side"><img src="${esc(sh.cash)}" alt="Caja de TallerSuite" loading="eager"></div>
+        <div class="it main shine"><img src="${esc(CONFIG.images.heroDesktop)}" alt="Panel principal de TallerSuite con datos de demostración" width="1440" height="869" fetchpriority="high"></div>
+        <div class="it pdf"><img src="${esc(sh.pdf)}" alt="Presupuesto en PDF" loading="eager"></div>
+        <div class="it ph"><img src="${esc(CONFIG.images.heroPhone)}" alt="TallerSuite en el celular" loading="eager"></div>
+        <div class="it person">${visual("bodyPaint", 1, "Persona trabajando en un taller")}</div>
+        <div class="chip3" style="left:4%;top:44px"><b>✓</b> Aprobado</div>
+        <div class="chip3" style="right:4%;top:150px;animation-delay:-2s"><b>●</b> Pagado</div>
+        <div class="chip3" style="left:38%;bottom:6px;animation-delay:-3s">PDF · WhatsApp · Enlace</div>
+      </div>
+    </div></div>
+    <p class="center hero__note" style="margin-top:34px">${esc(h.demoNote)}</p>`;
+}
+
+/* ---- Público: «Hecho para talleres como el tuyo» ---- */
+function renderAudience() {
+  const a = CONFIG.audience;
+  $("#paratitaller").innerHTML = `<div class="wrap">${headId(head(a, true), "audience-title")}
+    <div class="grid grid--4">${a.tiles.map((t, i) => `<button class="tile card glass reveal" type="button" data-prof="${esc(t.kind)}">${visual(t.kind, i, t.title)}<h3>${esc(t.title)}</h3><p>${esc(t.text)}</p><span class="tile__go">${esc(a.cta)} →</span></button>`).join("")}</div></div>`;
+  $("#paratitaller").addEventListener("click", (e) => { const b = e.target.closest("[data-prof]"); if (b) startQuiz(b.dataset.prof); });
+}
+
+/* ---- Problemas ---- */
+function renderProblems() {
+  const p = CONFIG.problems;
+  $("#problemas").innerHTML = `<div class="wrap">${headId(head(p, true), "problemas-title")}
+    <div class="grid grid--3">${p.items.map((i) => `<article class="card glass reveal"><div class="card__icon" aria-hidden="true">${i.icon}</div><h3>${esc(i.title)}</h3><p>${esc(i.text)}</p></article>`).join("")}</div></div>`;
+}
+
+/* ---- Módulos ---- */
+function moduleCard(m, animate = true) {
+  const src = shot(m.shot);
+  const media = src ? zoomBtn(src, m.title) : `<div class="mod__shot" style="cursor:default;display:grid;place-items:center;font-size:3rem" aria-hidden="true">${m.icon}</div>`;
+  return `<article class="mod glass${animate ? " reveal" : ""}"${animate ? ` id="mod-${esc(m.id)}"` : ""}>${media}<div class="mod__body"><div class="mod__top"><h3>${esc(m.title)}</h3>${badge(m.status, m.badgeNote ? `${CONFIG.statusLabels[m.status]} · ${m.badgeNote}` : "")}</div><p>${esc(m.text)}</p></div></article>`;
+}
+
+/* Estilo D: el laptop queda fijo y la pantalla cambia mientras se baja. En celular o con
+   «reducir movimiento» se muestran tarjetas simples (sin efecto de scroll). */
+let fxMode = null, fxHandler = null;
+function renderModules() {
+  const s = CONFIG.modulesSection, byId = (id) => CONFIG.modules.find((m) => m.id === id);
+  const steps = s.scrollIds.map(byId).filter(Boolean), extras = s.extraIds.map(byId).filter(Boolean);
+  const scrolly = innerWidth > 860 && !reduceMotion;
+  fxMode = scrolly;
+  if (fxHandler) { removeEventListener("scroll", fxHandler); fxHandler = null; }
+  const box = $("#modulos");
+  if (!scrolly) {
+    box.innerHTML = `<div class="wrap">${headId(head(s, true), "modulos-title")}<div class="grid grid--3">${[...steps, ...extras].map((m) => moduleCard(m)).join("")}</div></div>`;
+    return;
+  }
+  const PER = 62; /* alto de scroll (en vh) que dura cada paso */
+  box.innerHTML = `<div class="wrap">${headId(head(s, true), "modulos-title")}</div>
+    <div class="fx" id="fx" style="height:calc(${steps.length * PER}vh + 100vh)"><div class="wrap fx__sticky">
+      <div class="fx__list" role="list">${steps.map((m, i) => `<button class="fx__step" type="button" role="listitem" data-i="${i}"><h3><span aria-hidden="true">${m.icon}</span>${esc(m.title)}${badge(m.status, m.badgeNote ? `${CONFIG.statusLabels[m.status]} · ${m.badgeNote}` : "")}</h3><p>${esc(m.text)}</p></button>`).join("")}</div>
+      <div><div class="fx__screen"><div class="fx__frame">${steps.map((m, i) => `<img src="${esc(shot(m.shot))}" alt="${esc(m.title)}" ${i ? 'loading="lazy"' : ""} decoding="async">`).join("")}</div></div><div class="fx__dots" aria-hidden="true">${steps.map(() => "<i></i>").join("")}</div></div>
+    </div></div>
+    <div class="wrap"><h3 class="center" style="margin-top:50px">Y además</h3><div class="grid grid--3" style="margin-top:22px">${extras.map((m) => moduleCard(m)).join("")}</div></div>`;
+  const fx = $("#fx"), items = $$(".fx__step", fx), imgs = $$(".fx__frame img", fx), dots = $$(".fx__dots i", fx);
+  const total = () => fx.offsetHeight - innerHeight;
+  fxHandler = () => {
+    const r = fx.getBoundingClientRect(), p = Math.min(.9999, Math.max(0, -r.top / total())), k = Math.floor(p * steps.length);
+    items.forEach((e, i) => e.classList.toggle("on", i === k)); imgs.forEach((e, i) => e.classList.toggle("on", i === k)); dots.forEach((e, i) => e.classList.toggle("on", i === k));
+  };
+  addEventListener("scroll", fxHandler, { passive: true }); fxHandler();
+  $(".fx__list", fx).addEventListener("click", (e) => { const b = e.target.closest(".fx__step"); if (!b) return; const top = fx.getBoundingClientRect().top + scrollY; scrollTo({ top: top + total() * ((+b.dataset.i + .5) / steps.length), behavior: "smooth" }); });
+}
+
+/* ---- Clientes y vehículos (estilo C: mosaico flotante con parallax) ---- */
+function renderClients() {
+  const c = CONFIG.clientsVehicles, S = CONFIG.images.shots;
+  const cards = [
+    [S.formVehicle, "Formulario de vehículo", "left:0;top:0;width:62%;transform:rotate(-2deg);z-index:1", -.04],
+    [S.vehicles, "Vehículos", "right:0;top:80px;width:56%;transform:rotate(3deg);z-index:2", .08],
+    [S.clients, "Clientes", "left:2%;top:270px;width:54%;transform:rotate(2deg);z-index:3", -.07],
+    [S.formClient, "Formulario de cliente", "right:2%;top:340px;width:50%;transform:rotate(-3deg);z-index:4", .1],
+    [S.mobileOrders, "En el celular", "left:43%;top:190px;width:19%;transform:rotate(4deg);z-index:5", .12]
+  ];
+  $("#clientes").innerHTML = `<div class="wrap split">
+    <div class="reveal"><span class="eyebrow">${esc(c.eyebrow)}</span><h2 id="clientes-title">${esc(c.title)}</h2><p class="lead">${esc(c.lead)}</p>${ticks(c.fields)}<p class="note note--info">${esc(c.photosNote)}</p></div>
+    <div class="mosaic reveal" style="height:620px">${cards.map(([src, cap, st, sp]) => `<button class="c" type="button" data-s="${sp}" style="${st}" data-zoom="${esc(src)}" data-cap="${esc(cap)}" aria-label="Ampliar: ${esc(cap)}"><img src="${esc(src)}" alt="${esc(cap)}" decoding="async"><b>${esc(cap)}</b></button>`).join("")}</div></div>`;
+}
+
+/* ---- Presupuestos (estilo E: laptop con pestañas que avanzan solas) ---- */
+function renderBudgets() {
+  const b = CONFIG.budgetsSection;
+  $("#presupuestos").innerHTML = `<div class="wrap">${headId(head(b, true), "presupuestos-title")}
+    <div class="tabsx reveal" id="tabsx"><div><div class="tabsx__tabs" role="tablist">${b.steps.map((s, i) => `<button class="tabx" type="button" role="tab" data-i="${i}">${i + 1}. ${esc(s.tab || s.title)}<i></i></button>`).join("")}</div>
+      <div class="lap"><div class="lap__frame">${b.steps.map((s) => `<img src="${esc(shot(s.shot))}" alt="${esc(s.title)}" ${s.fit ? `data-fit="${s.fit}"` : ""} loading="lazy" decoding="async">`).join("")}</div></div></div>
+      <div class="tabsx__info" aria-live="polite"></div></div>
+    <p class="note note--info" style="margin-top:28px">${esc(b.note)}</p></div>`;
+  const root = $("#tabsx"), tabs = $$(".tabx", root), imgs = $$(".lap__frame img", root), info = $(".tabsx__info", root);
+  let timer;
+  const set = (i) => {
+    tabs.forEach((t, j) => { t.classList.remove("on"); t.setAttribute("aria-selected", j === i); void t.offsetWidth; t.classList.toggle("on", j === i); });
+    imgs.forEach((m, j) => m.classList.toggle("on", j === i));
+    info.innerHTML = `<span class="eyebrow">Paso ${i + 1} de ${b.steps.length}</span><h3>${esc(b.steps[i].title)}</h3><p class="lead">${esc(b.steps[i].text)}</p>${registerBtn("btn btn--primary btn--sm")}`;
+    clearTimeout(timer);
+    if (!reduceMotion && !root.classList.contains("paused")) timer = setTimeout(() => set((i + 1) % b.steps.length), 6000);
+    root.dataset.cur = i;
+  };
+  root.addEventListener("click", (e) => { const t = e.target.closest(".tabx"); if (t) set(+t.dataset.i); });
+  const pause = () => { root.classList.add("paused"); clearTimeout(timer); };
+  const resume = () => { root.classList.remove("paused"); set(+root.dataset.cur || 0); };
+  root.addEventListener("mouseenter", pause); root.addEventListener("mouseleave", resume);
+  root.addEventListener("focusin", pause); root.addEventListener("focusout", resume);
+  set(0);
+}
+
+/* ---- Seguimiento (próximamente) ---- */
+function renderTracking() {
+  const t = CONFIG.tracking;
+  $("#seguimiento").innerHTML = `<div class="wrap split split--rev">
+    <div class="split__media reveal"><div class="glass card"><div class="card__icon" aria-hidden="true">📲</div>${badge(t.status)}<h3 style="margin-top:12px">${esc(t.soonTitle)}</h3>${ticks(t.soon)}</div></div>
+    <div class="reveal"><span class="eyebrow">${esc(t.eyebrow)}</span><h2 id="seguimiento-title">${esc(t.title)}</h2><p class="lead">${esc(t.lead)}</p><h3>${esc(t.todayTitle)}</h3>${ticks(t.today)}<p class="note">${esc(t.note)}</p></div></div>`;
+}
+
+/* ---- Historial (estilo B: carrusel 3D) ---- */
+function renderHistory() {
+  const h = CONFIG.history, S = CONFIG.images.shots;
+  const slides = [[S.orders, "Órdenes de trabajo"], [S.cash, "Caja"], [S.purchases, "Compras"], [S.vehicles, "Vehículos"], [S.clients, "Clientes"], [S.inventory, "Repuestos y materiales"], [S.budgets, "Presupuestos"]];
+  $("#historial").innerHTML = `<div class="wrap">${headId(head(h, true), "historial-title")}
+    <div class="cflow reveal" id="cflow" role="region" aria-roledescription="carrusel" aria-label="Pantallas de TallerSuite"><button class="cflow__ar" style="left:8px" data-d="-1" type="button" aria-label="Anterior">‹</button><button class="cflow__ar" style="right:8px" data-d="1" type="button" aria-label="Siguiente">›</button>
+      <div class="cflow__track">${slides.map(([src, cap], i) => `<button class="cflow__card" type="button" data-i="${i}" aria-label="${esc(cap)}"><img src="${esc(src)}" alt="${esc(cap)}" loading="lazy" decoding="async"></button>`).join("")}</div><div class="cflow__cap" aria-live="polite"></div></div>
+    <ul class="ticks" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:30px">${h.items.map((t) => `<li><span>${esc(t)}</span></li>`).join("")}</ul>
+    <p class="note note--info">${esc(h.note)}</p></div>`;
+  const box = $("#cflow"), cards = $$(".cflow__card", box), cap = $(".cflow__cap", box);
+  let cur = 1, timer;
+  const layout = () => {
+    cards.forEach((c, i) => { const d = i - cur, a = Math.abs(d);
+      c.style.transform = `translateX(${d * 52}%) translateZ(${-a * 170}px) rotateY(${-Math.sign(d) * Math.min(a, 1) * 42}deg) scale(${a ? .82 : 1})`;
+      c.style.zIndex = 10 - a; c.style.opacity = a > 2 ? 0 : 1 - a * .18; c.style.filter = a ? "brightness(.9)" : "none"; c.tabIndex = a ? -1 : 0; });
+    cap.textContent = slides[cur][1];
+  };
+  const go = (i) => { cur = (i + slides.length) % slides.length; layout(); };
+  const auto = () => { clearInterval(timer); if (!reduceMotion) timer = setInterval(() => go(cur + 1), 4200); };
+  box.addEventListener("click", (e) => { const b = e.target.closest(".cflow__ar"), c = e.target.closest(".cflow__card"); if (b) go(cur + +b.dataset.d); else if (c) go(+c.dataset.i); auto(); });
+  box.addEventListener("keydown", (e) => { if (e.key === "ArrowLeft") go(cur - 1); if (e.key === "ArrowRight") go(cur + 1); });
+  box.addEventListener("mouseenter", () => clearInterval(timer)); box.addEventListener("mouseleave", auto);
+  layout(); auto();
+}
+
+/* ---- Asistente ---- */
+function renderAssistant() {
+  const a = CONFIG.assistant;
+  $("#asistente").innerHTML = `<div class="wrap split split--rev">
+    <div class="split__media reveal"><div class="frame tilt" data-tilt="6">${zoomBtn(shot("assistant"), "Asistente T.S. dentro del panel", "")}</div></div>
+    <div class="reveal"><span class="eyebrow">${esc(a.eyebrow)}</span><h2 id="asistente-title">${esc(a.title)}</h2><p class="lead">${esc(a.lead)}</p>
+      <h3>${badge("available", a.todayTitle)}</h3>${ticks(a.today)}
+      <h3>${badge("soon", a.soonTitle)}</h3>${ticks(a.soon)}
+      <p class="note note--info">${esc(a.plansNote)}</p><p class="note">${esc(a.note)}</p></div></div>`;
+}
+
+/* ---- Idiomas (abanico de PDFs que se abre al pasar el mouse) ---- */
+function renderLanguages() {
+  const l = CONFIG.languages, S = CONFIG.images.shots;
+  $("#idiomas").innerHTML = `<div class="wrap split">
+    <div class="reveal"><span class="eyebrow">${esc(l.eyebrow)}</span><h2 id="idiomas-title">${esc(l.title)}</h2><p class="lead">${esc(l.lead)}</p>${ticks(l.items)}<p class="note note--info">${esc(l.note)}</p></div>
+    <div class="fan reveal" tabindex="0" role="group" aria-label="Presupuestos de ejemplo en español y portugués"><div class="fp"><b>Español · Gs.</b><img src="${esc(S.pdf)}" alt="Presupuesto en español con montos en guaraníes (ejemplo ficticio)" loading="lazy"></div><div class="fp"><b>Motos · Español</b><img src="${esc(S.pdfMoto)}" alt="Presupuesto de motos en español (ejemplo ficticio)" loading="lazy"></div><div class="fp"><b>Português · R$</b><img src="${esc(S.pdfPt)}" alt="Presupuesto en portugués con montos en reales (ejemplo ficticio)" loading="lazy"></div></div></div>`;
+}
+
+/* ---- Profesiones ---- */
+function renderProfessions() {
+  const p = CONFIG.professionsSection;
+  $("#prof-head").innerHTML = `<span class="eyebrow">${esc(p.eyebrow)}</span><h2 id="profesiones-title">${esc(p.title)}</h2><p class="lead">${esc(p.lead)}</p><p class="hero__note">${esc(p.disclaimer)}</p>`;
+  $("#prof-grid").innerHTML = CONFIG.professions.map((x, i) => `<button class="prof card glass reveal" type="button" data-prof="${esc(x.id)}" aria-pressed="false">${visual(x.id, i, x.name)}<h3>${esc(x.name)}</h3>${badge(x.status)}<p>${esc(x.text)}</p><span class="prof__go">Hacer el cuestionario →</span></button>`).join("");
+  $("#prof-grid").addEventListener("click", (e) => { const b = e.target.closest("[data-prof]"); if (b) startQuiz(b.dataset.prof); });
+}
+
+/* ---- Cuestionario ---- */
+const quiz = { prof: null, i: 0, answers: [] };
+const area = () => $("#quiz-area");
+const fmt = (s, o) => s.replace(/\{(\w+)\}/g, (_, k) => o[k]);
+
+function startQuiz(id) {
+  quiz.prof = CONFIG.professions.find((p) => p.id === id);
+  quiz.i = 0; quiz.answers = [];
+  $$("#prof-grid [data-prof]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.prof === id)));
+  renderQuestion(true);
+}
+function renderQuestion(scroll) {
+  const qs = CONFIG.quiz[quiz.prof.id].questions, q = qs[quiz.i], u = CONFIG.quizUi, sel = quiz.answers[quiz.i];
+  area().innerHTML = `<div class="quiz glass" id="quiz" role="group" aria-label="${esc(u.startTitle)}: ${esc(quiz.prof.name)}">
+    <div class="quiz__top"><strong>${quiz.prof.icon} ${esc(quiz.prof.name)}</strong><span>${esc(fmt(u.questionOf, { n: quiz.i + 1, total: qs.length }))}</span></div>
+    <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="${qs.length}" aria-valuenow="${quiz.i}"><i style="width:${(quiz.i / qs.length) * 100}%"></i></div>
+    <form novalidate><fieldset><legend>${esc(q.text)}</legend><div class="opts">${q.options.map((o, k) => `<div class="opt"><input type="radio" name="q" id="o${k}" value="${k}" ${sel === k ? "checked" : ""}><label for="o${k}">${esc(o)}</label></div>`).join("")}</div></fieldset>
+    <p class="quiz__err" role="alert" id="qerr"></p>
+    <div class="quiz__nav"><button class="btn btn--ghost" type="button" id="qprev" ${quiz.i === 0 ? "disabled" : ""}>← ${esc(u.prev)}</button><button class="btn btn--primary" type="submit" id="qnext">${quiz.i === qs.length - 1 ? esc(u.finish) : esc(u.next) + " →"}</button></div></form>
+    <p style="margin:18px 0 0"><button class="btn btn--ghost btn--sm" type="button" id="qquit">${esc(u.changeProfession)}</button></p></div>`;
+  requestAnimationFrame(() => { const bar = $(".progress > i"); if (bar) { bar.style.width = `${((quiz.i + (sel != null ? 1 : 0)) / qs.length) * 100}%`; } });
+  $("form", area()).addEventListener("change", (e) => { if (e.target.name === "q") { quiz.answers[quiz.i] = Number(e.target.value); $("#qerr").textContent = ""; const bar = $(".progress > i"); bar.style.width = `${((quiz.i + 1) / qs.length) * 100}%`; } });
+  $("form", area()).addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (quiz.answers[quiz.i] == null) { $("#qerr").textContent = u.choose; return; }
+    if (quiz.i < qs.length - 1) { quiz.i++; renderQuestion(false); } else { renderResult(); }
+  });
+  $("#qprev").addEventListener("click", () => { if (quiz.i > 0) { quiz.i--; renderQuestion(false); } });
+  $("#qquit").addEventListener("click", () => { area().innerHTML = ""; quiz.prof = null; $$("#prof-grid [data-prof]").forEach((b) => b.setAttribute("aria-pressed", "false")); $("#profesiones").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" }); });
+  if (scroll) $("#quiz").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  else $("fieldset", area()).querySelector("input")?.focus({ preventScroll: true });
+}
+
+/* Resultado: diagnóstico orientativo → respuestas → oportunidades → módulos reales → datos opcionales */
+function renderResult() {
+  const qs = CONFIG.quiz[quiz.prof.id].questions, R = CONFIG.results, u = CONFIG.quizUi;
+  const avg = quiz.answers.reduce((a, b) => a + b, 0) / qs.length;
+  const level = R.levels.find((l) => avg <= l.max) || R.levels[R.levels.length - 1];
+  const filled = Math.round((avg / 3) * 5);
+  const low = qs.map((q, i) => ({ q, s: quiz.answers[i] })).filter((x) => x.s <= 1);
+  const tags = [...new Set(low.map((x) => x.q.module))];
+  const modIds = [...new Set((tags.length ? tags : ["budgets", "orders"]).flatMap((t) => CONFIG.moduleByTag[t].modules))].slice(0, 4);
+  const mods = modIds.map((id) => CONFIG.modules.find((m) => m.id === id)).filter(Boolean);
+  const avail = R.availability[quiz.prof.status];
+  area().innerHTML = `<div class="quiz glass result" id="quiz" tabindex="-1" aria-label="Resultado">
+    <div><span class="eyebrow">${quiz.prof.icon} ${esc(quiz.prof.name)}</span><h2>${esc(level.title)}</h2>
+      <div class="meter" aria-hidden="true">${[0, 1, 2, 3, 4].map((n) => `<i class="${n < filled ? "on" : ""}"></i>`).join("")}</div>
+      <p class="lead">${esc(level.text)}</p><p class="hero__note">${esc(R.disclaimer)}</p>
+      <p class="note ${quiz.prof.status === "available" ? "note--info" : ""}"><strong>${badge(quiz.prof.status)}</strong> ${esc(avail)}</p></div>
+    <div><h3>${esc(R.answersTitle)}</h3><ul class="answers">${qs.map((q, i) => { const s = quiz.answers[i]; return `<li><span>${esc(q.text)}<small>${esc(q.options[s])}</small></span><span class="tag ${s <= 1 ? "tag--low" : s === 2 ? "tag--mid" : "tag--high"}">${esc(CONFIG.scoreTags[s])}</span></li>`; }).join("")}</ul></div>
+    <div><h3>${esc(R.opportunitiesTitle)}</h3>${tags.length ? ticks(tags.map((t) => CONFIG.moduleByTag[t].label)) : `<p>${esc(R.noOpportunities)}</p>`}</div>
+    <div><h3>${esc(R.modulesTitle)}</h3><div class="reco">${mods.map((m) => moduleCard(m, false)).join("")}</div></div>
+    ${leadFormHtml()}
+    <div class="hero__cta">${registerBtn()}${whatsappBtn()}<button class="btn btn--ghost" type="button" id="qrestart">${esc(u.restart)}</button></div></div>`;
+  $("#quiz").scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+  $("#quiz").focus({ preventScroll: true });
+  $("#qrestart").addEventListener("click", () => startQuiz(quiz.prof.id));
+  bindLeadForm(Math.round(avg * 10) / 10);
+}
+
+/* ---- Datos opcionales (solo se envían con consentimiento y si hay leadEndpoint) ---- */
+function leadFormHtml() {
+  const L = CONFIG.lead;
+  return `<form class="lead-form glass" id="lead" novalidate><h3 style="margin:0">${esc(L.title)}</h3><p style="margin:0;color:var(--muted)">${esc(L.text)}</p>
+    <div class="field"><label for="lname">Nombre (opcional)</label><input type="text" id="lname" autocomplete="name" maxlength="80"></div>
+    <div class="field"><label for="lwa">WhatsApp (opcional)</label><input type="tel" id="lwa" autocomplete="tel" inputmode="tel" maxlength="30"></div>
+    <label class="consent"><input type="checkbox" id="lconsent"><span>${esc(L.consent)} <em>${esc(L.use)}</em></span></label>
+    <button class="btn btn--ghost" type="submit">${esc(L.submit)}</button><p class="form-msg" id="lmsg" role="status"></p></form>`;
+}
+function bindLeadForm(level) {
+  const L = CONFIG.lead, msg = $("#lmsg");
+  $("#lead").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const name = $("#lname").value.trim(), wa = $("#lwa").value.trim();
+    if (!name && !wa) { msg.textContent = L.needData; return; }
+    if (!$("#lconsent").checked) { msg.textContent = L.needConsent; return; }
+    if (!CONFIG.leadEndpoint) { msg.textContent = L.notConnected; return; }   // no se simula un envío exitoso
+    try {
+      const r = await fetch(CONFIG.leadEndpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, whatsapp: wa, profession: quiz.prof.id, level, consent: true }) });
+      if (!r.ok) throw new Error(r.status);
+      msg.textContent = L.sent; $("#lead").reset();
+    } catch { msg.textContent = L.failed; }
+  });
+}
+
+/* ---- Registro y pie ---- */
+function renderRegister() {
+  const r = CONFIG.registro;
+  $("#registro").innerHTML = `<div class="wrap"><div class="cta glass reveal"><h2 id="registro-title">${esc(r.title)}</h2><p class="lead">${esc(r.lead)}</p><div class="hero__cta">${registerBtn()}<a class="btn btn--ghost" href="#profesiones">${esc(CONFIG.buttons.explore)}</a>${whatsappBtn()}</div><p class="hero__note">${esc(r.note)}</p></div></div>`;
+  const f = CONFIG.footer, c = CONFIG.contact;
+  $("#footer").innerHTML = `<div class="footer__grid"><div><strong class="brand">${esc(CONFIG.brand.name.replace(CONFIG.brand.accent, ""))}<b>${esc(CONFIG.brand.accent)}</b></strong><p style="margin:6px 0 0">${esc(f.text)}</p>${c.email ? `<p style="margin:6px 0 0">${esc(c.email)}</p>` : ""}${c.phone ? `<p style="margin:0">${esc(c.phone)}</p>` : ""}</div><div>${f.links.map((l) => `<a href="${esc(l.href)}" ${l.href.startsWith("http") ? 'target="_blank" rel="noopener"' : ""}>${esc(l.label)}</a>`).join("")}</div></div><small>${esc(f.legal)}</small>`;
+}
+
+/* ---- Botón flotante de WhatsApp: solo el ícono, sin mostrar el número ---- */
+function renderWhatsappFloat() {
+  const url = waLink();
+  if (!url) return;
+  const a = document.createElement("a");
+  a.className = "wa-float"; a.href = url; a.target = "_blank"; a.rel = "noopener";
+  a.setAttribute("aria-label", CONFIG.buttons.whatsapp + " (se abre en otra pestaña)"); a.title = CONFIG.buttons.whatsapp;
+  a.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>';
+  document.body.appendChild(a);
+}
+
+/* ---- Ampliar capturas ---- */
+function initLightbox() {
+  const dlg = $("#lightbox"), img = $("#lightbox-img"), cap = $("#lightbox-cap");
+  document.addEventListener("click", (e) => {
+    const z = e.target.closest("[data-zoom]");
+    if (z) { img.src = z.dataset.zoom; img.alt = z.dataset.cap; cap.textContent = z.dataset.cap; dlg.showModal(); return; }
+    if (e.target === dlg || e.target.closest(".lightbox__close")) dlg.close();
+  });
+}
+
+/* ---- Aparición progresiva ---- */
+function initReveal() {
+  const els = $$(".reveal");
+  if (reduceMotion || !("IntersectionObserver" in window)) { els.forEach((e) => e.classList.add("in")); return; }
+  const io = new IntersectionObserver((en) => en.forEach((x) => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: .12, rootMargin: "0px 0px -40px 0px" });
+  els.forEach((e) => io.observe(e));
+}
+
+/* ---- Inclinación 3D con el mouse (portada y tarjetas con data-tilt) ---- */
+function initTilt() {
+  if (reduceMotion || !matchMedia("(hover: hover)").matches) return;
+  const stack = $("#stack"), stage = $("#stage");
+  if (stack && stage) {
+    stack.addEventListener("pointermove", (e) => { const r = stack.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; stage.style.transform = `rotateY(${x * 14}deg) rotateX(${-y * 10}deg)`; });
+    stack.addEventListener("pointerleave", () => { stage.style.transform = ""; });
+  }
+  $$("[data-tilt]").forEach((el) => {
+    const m = +el.dataset.tilt || 6;
+    el.addEventListener("pointermove", (e) => { const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; el.style.transform = `perspective(900px) rotateY(${x * m * 2}deg) rotateX(${-y * m * 2}deg) scale(1.02)`; });
+    el.addEventListener("pointerleave", () => { el.style.transform = ""; });
+  });
+}
+
+/* ---- Parallax del mosaico: cada tarjeta se mueve a distinta velocidad al hacer scroll ---- */
+function initParallax() {
+  if (reduceMotion) return;
+  const boxes = $$(".mosaic");
+  const run = () => boxes.forEach((b) => { const r = b.getBoundingClientRect(); if (r.bottom < -200 || r.top > innerHeight + 200) return; const m = r.top + r.height / 2 - innerHeight / 2; $$(".c", b).forEach((c) => { c.style.translate = `0 ${m * (+c.dataset.s) * -1}px`; }); });
+  addEventListener("scroll", run, { passive: true }); run();
+}
+
+/* ---- Arranque ---- */
+function init() {
+  renderHeader(); renderHero(); renderAudience(); renderProblems(); renderModules(); renderClients(); renderBudgets(); renderTracking();
+  renderHistory(); renderAssistant(); renderLanguages(); renderProfessions(); renderRegister();
+  initLightbox(); initReveal(); initTilt(); initParallax(); renderWhatsappFloat();
+  /* Si cambia el ancho de pantalla, se vuelve a elegir el modo de la sección de funciones */
+  let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => { if ((innerWidth > 860 && !reduceMotion) !== fxMode) { renderModules(); initReveal(); } }, 250); });
+}
+init();
+</script>
+</body>
+</html>
